@@ -6,7 +6,7 @@ declare_id!("7hTffwGm6YkPK5rC4N1LfSQvZkr97ZvGQX4qVY7w77ht");
 pub mod donate {
     use super::*;
 
-    pub fn setup(ctx: Context<Inititialize>) -> Result<()> {
+    pub fn setup(ctx: Context<Setup>) -> Result<()> {
         let summary = &mut ctx.accounts.summary;        
         summary.donations = 0_u64;
         summary.total = 0_u64;
@@ -18,6 +18,7 @@ pub mod donate {
         let donation = &mut ctx.accounts.donation;
         let summary = &mut ctx.accounts.summary;
 
+        donation.bump = *ctx.bumps.get("donation").unwrap();
         donation.amount = amount;
         summary.add(DonorAmount { amount: amount, donor: ctx.accounts.donor.key() });
         Ok(())
@@ -25,7 +26,7 @@ pub mod donate {
 }
 
 #[derive(Accounts)]
-pub struct Inititialize<'info> {
+pub struct Setup<'info> {
     #[account(init, payer = payer, space = 8 + 32 + 8 + 8 + ((4+32) * 10), seeds = [b"donation-summary", id().as_ref()], bump)]
     pub summary: Account<'info, DonationSummary>,
     #[account(mut)]
@@ -35,20 +36,21 @@ pub struct Inititialize<'info> {
 
 #[derive(Accounts)]
 pub struct Donate<'info> {
-    //#[account(init, payer=donor, space= 8 + 4, seeds=[b"donation", donor.key.as_ref()], bump)]
-    #[account(init, payer=donor, space=8+4)]
+    #[account(init, payer=donor, space= 8 + 1 + 4, seeds=[b"donation", donor.key.as_ref()], bump)]
     pub donation: Account<'info, Donation>,
+    
+    #[account(mut)]
+    pub donor: Signer<'info>,
 
     #[account(mut, seeds = [b"donation-summary", id().as_ref()], bump=summary.bump)]
     pub summary: Account<'info, DonationSummary>,
 
-    #[account(mut)]
-    pub donor: Signer<'info>,
     pub system_program: Program<'info, System>
 }
 
 #[account]
 pub struct Donation{
+    pub bump: u8, //1 byte
     pub amount: u32, //4 bytes
 }
 
