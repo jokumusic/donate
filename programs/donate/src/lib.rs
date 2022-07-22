@@ -19,7 +19,8 @@ pub mod donate {
         let summary = &mut ctx.accounts.summary;
 
         donation.bump = *ctx.bumps.get("donation").unwrap();
-        donation.amount = amount;
+        donation.amount = amount;   
+        
         summary.add(DonorAmount { amount: amount, donor: ctx.accounts.donor.key() });
         Ok(())
     }
@@ -27,7 +28,7 @@ pub mod donate {
 
 #[derive(Accounts)]
 pub struct Setup<'info> {
-    #[account(init, payer = payer, space = 8 + 32 + 8 + 8 + ((4+32) * 10), seeds = [b"donation-summary", id().as_ref()], bump)]
+    #[account(init, payer = payer, space = 8 + 1 + 8 + 8 + ((4+32) * 10), seeds = [b"donation-summary", id().as_ref()], bump)]
     pub summary: Account<'info, DonationSummary>,
     #[account(mut)]
     pub payer: Signer<'info>,
@@ -36,7 +37,9 @@ pub struct Setup<'info> {
 
 #[derive(Accounts)]
 pub struct Donate<'info> {
-    #[account(init, payer=donor, space= 8 + 1 + 4, seeds=[b"donation", donor.key.as_ref()], bump)]
+    #[account(init, payer=donor, space= 8 + 1 + 4
+        , seeds=[b"donation",  summary.donations.to_string().as_bytes(), donor.key.as_ref()]
+        , bump)]
     pub donation: Account<'info, Donation>,
     
     #[account(mut)]

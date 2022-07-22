@@ -12,8 +12,6 @@ describe("", () => {
   const program = anchor.workspace.Donate as Program<Donate>;  
   const [summaryPda, summaryPdaBump] = publicKey
   .findProgramAddressSync([anchor.utils.bytes.utf8.encode("donation-summary"), program.programId.toBuffer()], program.programId);
-  const [donorPda, donorPdaBump] = publicKey
-  .findProgramAddressSync([anchor.utils.bytes.utf8.encode("donation"), provider.publicKey.toBuffer()], program.programId);
 
   describe("[Initialize]", () =>{
     it("Setup Donation Summary PDA", async () => {
@@ -45,6 +43,13 @@ describe("[Update]", () =>{
   it("Send Donation", async () => {
 
     const summaryBeforeDonation  = await program.account.donationSummary.fetch(summaryPda);
+    const [donorPda, donorPdaBump] = publicKey
+    .findProgramAddressSync([
+        anchor.utils.bytes.utf8.encode("donation"), 
+        anchor.utils.bytes.utf8.encode(summaryBeforeDonation.donations.toNumber().toString()),
+        provider.publicKey.toBuffer()
+      ], program.programId);
+  
     const donationAmount = Math.floor(Math.random() * 200) + 1;
     const tx = await program.methods
       .donate(donationAmount)
